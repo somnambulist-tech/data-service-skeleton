@@ -1,0 +1,6 @@
+{
+    "type": "project",
+    "name": "somnambulist/data-service",
+    "description": "Provides a set of backend services for use in a development micro-services project",
+    "license": "MIT"
+}

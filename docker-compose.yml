@@ -1,0 +1,118 @@
+version: '3.5'
+
+services:
+
+  #
+  # Add databases / persistence stores here. e.g. Postgres, MySQL etc.
+  # You should add one per service for each unique type of storage
+  #
+  # Note: it is better to not share a redis instance, that is better set
+  # on each service that needs it, instead of one monolithic store.
+  #
+  # A good convention is to prefix the service type e.g.: db-<db_name>
+  #
+
+  db-app-users:
+    image: postgres:12-alpine
+    environment:
+      POSTGRES_DB: app_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - app_db:/var/lib/postgresql/data
+    ports:
+      - "54321:5432"
+    networks:
+      - backend
+    labels:
+      traefik.enable: "false"
+
+
+
+  #
+  # standard services that are shared
+  #
+
+  rabbitmq:
+    image: rabbitmq:3.7-management-alpine
+    environment:
+      RABBITMQ_ERLANG_COOKIE: rabbitmqcookienamehere
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+    ports:
+      - "25673:15672"
+      - "25672:5672"
+    networks:
+      - backend
+    labels:
+      traefik.port: 15672
+      traefik.frontend.rule: "Host:rabbit.example.dev"
+
+  # see docs about service-discovery and dns
+  proxy:
+    build:
+      context: .
+      dockerfile: src/Resources/docker/proxy/Dockerfile
+      args:
+        PROXY_DOCKER_HOST: ${DOCKER_HOST_ALT:-unix:///var/run/docker.sock}
+    restart: always
+    command: --api --docker
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    labels:
+      traefik.port: 8080
+      traefik.frontend.rule: "Host:proxy.example.dev"
+    networks:
+      - backend
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+#  tideways:
+#    build:
+#      context: .
+#      dockerfile: src/Resources/docker/tideways/Dockerfile
+#    networks:
+#      - backend
+#    labels:
+#      traefik.enable: "false"
+
+  dns:
+    build:
+      context: .
+      dockerfile: src/Resources/docker/dns/Dockerfile
+      args:
+        DNS_HOST_IP: ${DNS_HOST_IP:-127.0.0.1}
+    restart: always
+    ports:
+      - "1034:53/udp"
+      - "5380:8080"
+    logging:
+      options:
+        max-size: 10m
+    networks:
+      - backend
+    labels:
+      traefik.enable: "true"
+      traefik.port: 8080
+      traefik.frontend.rule: "Host:dns.example.dev"
+
+networks:
+  backend:
+    driver: bridge
+    name: app_network_backend
+
+#
+# These are docker volumes used to provide storage across container re-builds
+# add one per persistent service and name them appropriately. Remember the
+# names must be unique across all docker volumes on your system / prod.
+#
+# A suggested name is: the {COMPOSE_PROJECT_NAME}_volumes_<service_name>
+#
+volumes:
+  app_db:
+    name: app_volumes_app_db
+  rabbitmq:
+    name: app_volumes_rabbitmq
+
