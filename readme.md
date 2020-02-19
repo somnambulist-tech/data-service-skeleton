@@ -2,7 +2,7 @@
 
 This is a skeleton project that pre-configures a shared data services project to act
 as the storage / front-end for micro services. It is intended to be used in conjunction
-with the [Symfony Micro Service](https://github.com/dave-redfern/micro-service-skeleton)
+with the [Symfony Micro Service](https://github.com/somnambulist-tech/micro-service-skeleton)
 and provides the DNS, proxy, rabbit queue and database(s).
 
 It includes:
@@ -19,17 +19,13 @@ Assorted readme files are included for different parts of the service setup:
 
 ## Getting Started
 
-Create a new project using composer:
-
-`composer create-project somnambulist/data-service <folder>`
+From GitHub, create a new repository from the data-service-skeleton template and then check it out to
+your dev machine. Alternatively checkout a detached copy from GitHub and then push to a new repo later.
 
 Customise the base files as you see fit; change names, (especially the service names), config values etc
 to suite your needs. Then: `docker-compose up -d` to start the docker environment in dev mode.
 Be sure to read [Service Discovery](readme-service-discovery.md) to understand some of how the docker
 environment is setup.
-
-__Note:__ to use the latest version add `dev-master` as the last argument when creating a project. This
-will checkout and use the current master version, instead of a tagged release.
 
 ### Recommended First Steps
 
@@ -52,6 +48,7 @@ The following docker services are pre-configured for development:
  * PostgreSQL 12
  * RabbitMQ 3.7 + management console
  * DNSmasq
+ * syslog-ng 3.22
  * Traefik 1.7
  * Tideways
 

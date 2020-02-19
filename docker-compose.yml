@@ -13,7 +13,9 @@ services:
   #
 
   db-app-users:
-    image: postgres:12-alpine
+    build:
+      context: .
+      dockerfile: src/Resources/docker/postgres/Dockerfile
     environment:
       POSTGRES_DB: app_db
       POSTGRES_USER: user
@@ -55,19 +57,31 @@ services:
       dockerfile: src/Resources/docker/proxy/Dockerfile
       args:
         PROXY_DOCKER_HOST: ${DOCKER_HOST_ALT:-unix:///var/run/docker.sock}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     restart: always
     command: --api --docker
     ports:
       - "80:80"
       - "443:443"
       - "8080:8080"
+    networks:
+      - backend
     labels:
       traefik.port: 8080
       traefik.frontend.rule: "Host:proxy.example.dev"
+
+  syslog:
+    build:
+      context: .
+      dockerfile: src/Resources/docker/logger/Dockerfile
+    volumes:
+      - syslog_logs:/var/log/syslog-ng
+    restart: always
     networks:
       - backend
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      trafik.enable: "false"
 
 #  tideways:
 #    build:
@@ -115,4 +129,6 @@ volumes:
     name: app_volumes_app_db
   rabbitmq:
     name: app_volumes_rabbitmq
+  syslog_logs:
+    name: app_volumes_syslog-logs
 
