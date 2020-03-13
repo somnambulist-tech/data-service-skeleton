@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+DIR="${BASH_SOURCE%/*}"; if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi;
+if [[ -f "${DIR}/../.env" ]]; then . "${DIR}/../.env"; fi;
+
+LOG_BASE_PATH=/var/log/syslog-ng
+
+LOG_HELP="
+Log Command
+-----------
+
+Access syslog logs from the syslog container. By default all arguments
+are passed to tail running in the syslog context. To get a list of
+available log files run:
+
+    bin/dc-logs --list
+    bin/dc-logs -l
+
+Then to tail a specific log:
+
+    bin/dc-logs /path/to/log/file.log
+
+Options to tail can also be passed:
+
+    bin/dc-logs -f /path/to/log/file.log
+";
+
+if [ "$#" == 0 ]; then
+    echo "${LOG_HELP}";
+    exit 0;
+fi
+
+for arg in "$@"
+do
+    if [ "$arg" == "--list" ] || [ "$arg" == "-l" ]; then
+        echo "Finding log files in ${LOG_BASE_PATH}:"
+        docker-compose exec syslog find ${LOG_BASE_PATH} -type f -name *.log
+        exit 0;
+    elif [ "$arg" == "--help" ] || [ "$arg" == "-h" ]; then
+        echo "${LOG_HELP}";
+        exit 0;
+    else
+        docker-compose exec syslog tail "$@"
+        exit 0;
+    fi
+done
