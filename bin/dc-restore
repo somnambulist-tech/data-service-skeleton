@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+DIR="${BASH_SOURCE%/*}"; if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi;
+if [[ -f "${DIR}/../.env" ]]; then . "${DIR}/../.env"; fi;
+
+HELP_TITLE="
+Postgres Database Restore Command
+---------------------------------
+"
+HELP_TEXT="${HELP_TITLE}
+Restores a custom Postgres backup file to the specified database. These backup
+files should have been generated via pg_dump using the --format=c option.
+
+The specified file will first be copied to the Postgres docker container and
+then restored using pg_restore.
+
+    bin/dc-restore <dbcontainer> <dbname> <file>
+
+For example:
+
+    bin/dc-restore db-container db-name ~/Downloads/backup_file.pg
+
+By default the database will be dropped and re-created when restoring a file.
+"
+
+if [ "$#" == 0 ]; then
+    echo "$HELP_TEXT";
+    exit 0;
+fi
+if [ "$#" -ne 3 ]; then
+    echo "Missing or too many arguments - this command expects 3 arguments\n";
+    echo "$HELP_TEXT";
+    exit 1;
+fi
+
+DB_CONTAINER=$1;
+DB_NAME=$2;
+DB_FILE=$3;
+DB_CONTAINER_ID=$(docker ps --filter=name=${DB_CONTAINER} --format="{{ .ID }}" -n 1);
+
+PG_ENV_VARS="--env PGUSER=user --env PGHOST=localhost --env PGPASSWORD=secret"
+
+echo "${HELP_TITLE}
+Note: if the corresponding service or a script is accessing the database, the
+restore may not complete. Be sure to shutdown all services before restoring
+a database.
+"
+
+echo " > Copying ${DB_FILE} to /var/tmp in container ${DB_CONTAINER_ID}"
+docker cp "${DB_FILE}" "${DB_CONTAINER_ID}:/var/tmp/backup.pg"
+
+echo " > Dropping database: ${DB_NAME}"
+docker-compose exec ${PG_ENV_VARS} ${DB_CONTAINER} dropdb --if-exists ${DB_NAME}
+
+echo " > Creating database: ${DB_NAME}"
+docker-compose exec ${PG_ENV_VARS} ${DB_CONTAINER} createdb --owner=melos ${DB_NAME}
+docker-compose exec ${PG_ENV_VARS} ${DB_CONTAINER} psql -e -f /docker-entrypoint-initdb.d/init.sql -d ${DB_NAME}
+
+echo " > Restoring database from: ${DB_FILE}"
+docker-compose exec ${PG_ENV_VARS} ${DB_CONTAINER} pg_restore --clean --if-exists --no-privileges --no-acl --no-owner -d ${DB_NAME} /var/tmp/backup.pg
+
+echo " > Removing backup file from container"
+docker-compose exec ${PG_ENV_VARS} ${DB_CONTAINER} rm /var/tmp/backup.pg

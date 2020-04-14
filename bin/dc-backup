@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+DIR="${BASH_SOURCE%/*}"; if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi;
+if [[ -f "${DIR}/../.env" ]]; then . "${DIR}/../.env"; fi;
+
+HELP_TITLE="
+Postgres Database Backup Command
+--------------------------------
+"
+HELP_TEXT="${HELP_TITLE}
+Generates backup files from the specified Postgres service. Backups are created
+using the custom Postgres format, without owners or privileges and can be used
+with the dc-restore script.
+
+Backups are first made to the container hosting the database server and then
+copied to the local system path specified at backup time.
+
+This script expects the following arguments:
+
+    bin/dc-backup <dbcontainer> <dbname> <file>
+
+For example:
+
+    bin/dc-backup db-container db-name ~/Downloads/backup_file.pg
+
+"
+
+if [ "$#" == 0 ]; then
+    echo "$HELP_TEXT";
+    exit 0;
+fi
+if [ "$#" -ne 3 ]; then
+    echo "Missing or too many arguments - this command expects 3 arguments\n";
+    echo "$HELP_TEXT";
+    exit 1;
+fi
+
+DB_CONTAINER=$1;
+DB_NAME=$2;
+DB_FILE=$3;
+DB_CONTAINER_ID=$(docker ps --filter=name=${DB_CONTAINER} --format="{{ .ID }}" -n 1);
+
+PG_ENV_VARS="--env PGUSER=user --env PGHOST=localhost --env PGPASSWORD=secret"
+
+echo " > Backing up database: ${DB_NAME}"
+docker-compose exec ${PG_ENV_VARS} ${DB_CONTAINER} pg_dump --file /var/tmp/backup.pg --format=c --no-owner --no-privileges "${DB_NAME}"
+
+echo " > Copying backup to ${DB_FILE}"
+docker cp "${DB_CONTAINER_ID}:/var/tmp/backup.pg" "${DB_FILE}"
+
+echo " > Removing backup file from container"
+docker-compose exec ${PG_ENV_VARS} ${DB_CONTAINER} rm /var/tmp/backup.pg
