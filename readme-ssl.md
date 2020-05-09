@@ -9,6 +9,8 @@ If you wish to use your own self-generated cert or a manually configured LetsEnc
 
 Traefik requires an SSL certificate. Use the following in dev to generate a self-signed cert:
 
+__Note:__ be sure to first edit the `req.cnf` file BEFORE generating the certificate!
+
 ```shell script
 cd src/Resources/docker/proxy/certs
 openssl req -x509 -nodes -days 730 -newkey rsa:2048 -keyout server.key -out server.pem -config req.cnf -sha256
@@ -20,6 +22,7 @@ questions. Be sure to update it with your details / dev domain (the default is e
 To install a revised cert stop all services and then force build the containers.
 
 This certificate will need adding to your Keychain in order to use it. It should be flagged as "trusted".
+Once added to the keychain, you will need to restart any browsers for them to see the new certificate.
 
 Only use this option in your dev environment!
 
