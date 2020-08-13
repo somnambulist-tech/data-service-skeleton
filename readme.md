@@ -10,7 +10,6 @@ It includes:
  * commented docker-compose.yml file
  * docker configuration including Postgres, dns, Traefik, and RabbitMQ
  * docker is configured to use Docker volumes
- * Tideways config is ready to go for PHP profiling (uncomment to use)
  
 Assorted readme files are included for different parts of the service setup:
 
@@ -37,9 +36,9 @@ useful. The following files should be updated:
 
  * .env
  * docker-compose*.yml
- * src/Resources/docker/proxy/traefik.toml
- * src/Resources/docker/proxy/certs/req.cnf
- * src/Resources/docker/dns/Dockerfile
+ * config/docker/proxy/traefik.yaml
+ * config/docker/proxy/certs/req.cnf
+ * config/docker/dns/Dockerfile
 
 #### Configured Services
 
@@ -48,9 +47,8 @@ The following docker services are pre-configured for development:
  * PostgreSQL 12
  * RabbitMQ 3.7 + management console
  * DNSmasq
- * syslog-ng 3.22
- * Traefik 1.7
- * Tideways
+ * syslog-ng 3
+ * Traefik 2.2
 
 #### Docker Service Names
 

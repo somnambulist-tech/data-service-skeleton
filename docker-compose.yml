@@ -1,4 +1,4 @@
-version: '3.5'
+version: "3.7"
 
 services:
 
@@ -11,11 +11,10 @@ services:
   #
   # A good convention is to prefix the service type e.g.: db-<db_name>
   #
-
   db-app-users:
     build:
       context: .
-      dockerfile: src/Resources/docker/postgres/Dockerfile
+      dockerfile: config/docker/postgres/Dockerfile
     environment:
       POSTGRES_DB: app_db
       POSTGRES_USER: user
@@ -26,14 +25,73 @@ services:
       - "54321:5432"
     networks:
       - backend
+
+  #
+  # Reverse proxy service
+  #
+  # Allows dynamically adding services and making them available via single
+  # entry point. Traefik is used and listens to the docker socket to do all
+  # its auto-configuration. See: https://docs.traefik.io for more.
+  #
+  # See the docs about service-discovery and dns in: readme-service-discovery.md
+  #
+  # Note: if you want to move the CLI config to a traefik.yaml file you must
+  # remove all the command lines below AND the SSL config must still be loaded
+  # from a separate file.
+  #
+  proxy:
+    build:
+      dockerfile: config/docker/proxy/Dockerfile
+      context: .
+    command:
+      - --global.sendAnonymousUsage=false
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entryPoint.to=https
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.https.address=:443
+      - --providers.file.directory=/etc/traefik/dynamic_conf/
+      - --providers.file.watch=true
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - backend
     labels:
-      traefik.enable: "false"
-
-
+      traefik.enable: true
+      traefik.http.routers.proxy.rule: "Host(`proxy.example.dev`)"
+      traefik.http.routers.proxy.tls: true
+      traefik.http.services.proxy.loadbalancer.server.port: 8080
 
   #
-  # standard services that are shared
+  # Shared services
   #
+
+  dns:
+    build:
+      context: .
+      dockerfile: config/docker/dns/Dockerfile
+      args:
+        DNS_HOST_IP: ${DNS_HOST_IP:-127.0.0.1}
+    restart: always
+    ports:
+      - "1034:53/udp"
+      - "5380:8080"
+    logging:
+      options:
+        max-size: 10m
+    networks:
+      - backend
+    labels:
+      traefik.enable: true
+      traefik.http.routers.dns.rule: "Host(`dns.example.dev`)"
+      traefik.http.routers.dns.tls: true
+      traefik.http.services.dns.loadbalancer.server.port: 8080
 
   rabbitmq:
     image: rabbitmq:3.7-management-alpine
@@ -47,79 +105,33 @@ services:
     networks:
       - backend
     labels:
-      traefik.port: 15672
-      traefik.frontend.rule: "Host:rabbit.example.dev"
-
-  # see docs about service-discovery and dns
-  proxy:
-    build:
-      context: .
-      dockerfile: src/Resources/docker/proxy/Dockerfile
-      args:
-        PROXY_DOCKER_HOST: ${DOCKER_HOST_ALT:-unix:///var/run/docker.sock}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    restart: always
-    command: --api --docker
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
-    networks:
-      - backend
-    labels:
-      traefik.port: 8080
-      traefik.frontend.rule: "Host:proxy.example.dev"
+      traefik.enable: true
+      traefik.http.routers.rabbitmq.rule: "Host(`rabbit.example.dev`)"
+      traefik.http.routers.rabbitmq.tls: true
+      traefik.http.services.rabbitmq.loadbalancer.server.port: 15672
 
   syslog:
     build:
       context: .
-      dockerfile: src/Resources/docker/logger/Dockerfile
+      dockerfile: config/docker/logger/Dockerfile
     volumes:
       - syslog_logs:/var/log/syslog-ng
     restart: always
     networks:
       - backend
-    labels:
-      trafik.enable: "false"
 
-#  tideways:
-#    build:
-#      context: .
-#      dockerfile: src/Resources/docker/tideways/Dockerfile
-#    networks:
-#      - backend
-#    labels:
-#      traefik.enable: "false"
-
-  dns:
-    build:
-      context: .
-      dockerfile: src/Resources/docker/dns/Dockerfile
-      args:
-        DNS_HOST_IP: ${DNS_HOST_IP:-127.0.0.1}
-    restart: always
-    ports:
-      - "1034:53/udp"
-      - "5380:8080"
-    logging:
-      options:
-        max-size: 10m
-    networks:
-      - backend
-    labels:
-      traefik.enable: "true"
-      traefik.port: 8080
-      traefik.frontend.rule: "Host:dns.example.dev"
-
+#
+# A named network is needed to allow other projects to tap into this network
+# block and be resolved by Traefik (proxy) service.
+#
 networks:
   backend:
     driver: bridge
     name: app_network_backend
 
 #
-# These are docker volumes used to provide storage across container re-builds
-# add one per persistent service and name them appropriately. Remember the
+# These are docker volumes used to provide storage across container re-builds.
+# Add one per persistent service and name them appropriately. Remember the
 # names must be unique across all docker volumes on your system / prod.
 #
 # A suggested name is: the {COMPOSE_PROJECT_NAME}_volumes_<service_name>

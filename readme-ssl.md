@@ -1,7 +1,7 @@
 # Traefik SSL
 
 Traefik natively supports LetsEncrypt and other SSL mechanisms. If you have an external IP then
-read the docs: https://docs.traefik.io/v1.7/configuration/acme/
+read the docs: https://docs.traefik.io/https/acme/
 
 If you wish to use your own self-generated cert or a manually configured LetsEncrypt, read on.
 
@@ -12,8 +12,8 @@ Traefik requires an SSL certificate. Use the following in dev to generate a self
 __Note:__ be sure to first edit the `req.cnf` file BEFORE generating the certificate!
 
 ```shell script
-cd src/Resources/docker/proxy/certs
-openssl req -x509 -nodes -days 730 -newkey rsa:2048 -keyout server.key -out server.pem -config req.cnf -sha256
+cd config/docker/proxy/certs
+openssl req -x509 -nodes -days 800 -newkey rsa:2048 -keyout server.key -out server.pem -config req.cnf -sha256
 ```
 
 This step uses the `req.cnf` configuration file. This contains default answers to the SSL signing
@@ -25,6 +25,8 @@ This certificate will need adding to your Keychain in order to use it. It should
 Once added to the keychain, you will need to restart any browsers for them to see the new certificate.
 
 Only use this option in your dev environment!
+
+Instead of a self-signed cert, you could use a free wildcard SSL or any other issued SSL cert.
 
 ## LetsEncrypt
 

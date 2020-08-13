@@ -24,7 +24,7 @@ RUN apk --update add ca-certificates \
     # Clean up
     && rm -rf /var/cache/apk/* /tmp/*
 
-COPY src/Resources/docker/logger/syslog-ng.conf /etc/syslog-ng/syslog-ng.conf
+COPY config/docker/logger/syslog-ng.conf /etc/syslog-ng/syslog-ng.conf
 
 ENV NGDATA /var/log/syslog-ng
 

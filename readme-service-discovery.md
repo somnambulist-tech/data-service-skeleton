@@ -12,15 +12,12 @@ configured.
 To fully use the service discovery feature, a local DNS service has been added. This allows
 for local host resolution of the *.example.dev domain name.
 
-__Note:__ this project is configured with Traefik 1.X configuration directives and has not
-been updated to v2.X yet. This will be done in a future release.
-
 __Note:__ it is suggested to move the base data services into a separate project so that they
 can be shared with other micro services.
 
 ### Exposed Services
 
- * http://dns.example.dev:5380/ - DNSMasq console
+ * http://dns.example.dev/ - DNSMasq console
  * http://proxy.example.dev/ - Traefik Console / Monitoring
  * http://rabbit.example.dev/ - RabbitMQ Management Panel
 
@@ -91,19 +88,15 @@ Traefik acts as a proxy and load balancer in a similar way to nginx. It listens 
 and provides a gui (usually on 8080, but proxy.example.dev:80 gives access as well). LetsEncrypt can
 be setup to provide SSL as well as HTTP auth etc.
 
-To register containers with traefik (called `proxy` in this project), you need to label the container
+To register containers with Traefik (called `proxy` in this project), you need to label the container
 with specific tags. Any web service should be labeled with:
 
- * traefik.port
- * traefik.frontend.rule
+ * traefik.enable
+ * traefik.http.* with configuration directives
  
-Any support services e.g. DBs, redis anything without a web-frontend should be tagged with:
+By default, Traefik will _not_ register new services - they must be explicitly configured.
 
- * traefik.enable: "false"
-
-This is required to stop traefik from automatically resolving those services.
-
-For example: to expose the example App API and have traefik route it:
+For example: to expose the example App API and have Traefik route it:
 
 ```yaml
 services:
@@ -114,17 +107,40 @@ services:
     networks:
       - backend
     labels:
-      traefik.port: 8080
-      traefik.frontend.rule: "Host:app.example.dev"
+      traefik.enable: true
+      traefik.http.routers.app.rule: "Host(`app.example.dev`)"
+      traefik.http.routers.app.tls: true
+      traefik.http.services.app.loadbalancer.server.port: 8080
 ```
 
-The `port` is the INTERNAL container port, the frontend rule is how it should be accessed via
-traefik. We could require the previous port by changing the `rule` to: `Host:app.example.dev:4011`
+By default, the proxy service has automatic SSL forwarding on all hosts, however each app still
+needs to explicitly set this. If you are using a `.dev` domain name, then these must be served over
+SSL.
 
-All that is left to do is `dc up -d` and now traefik will pick up the new container and it will
-be available immediately.
+Each of the `http` config options needs setting to the services name that this config applies to.
+In this example, the service name is "app" - that is the key under the services. This is then used
+in each of the router and services options. If your service is named "webserver" then these labels
+would be written as:
+
+```yaml
+services:
+  webserver:
+    labels:
+      traefik.enable: true
+      traefik.http.routers.webserver.rule: "Host(`app.example.dev`)"
+      traefik.http.routers.webserver.tls: true
+      traefik.http.services.webserver.loadbalancer.server.port: 8080
+``` 
+
+The `server.port` is the INTERNAL container port that Traefik should forward requests to. Typically
+this is whatever is exposed in the containers Dockerfile e.g.: 8080, 9000, 5432, etc etc. If there
+is only one port exposed, this option can be left of, however if there is more than one it must
+be provided.
+
+All that is left to do is `dc up -d` and Traefik will pick up the new container and it will be made
+available via whatever hostname was set (presuming you are also using the DNS resolver).
 
 If you `dc down` services will automatically be removed.
 
-As the traefik config is done through labels, they can be added safely to docker-compose files
+As the Traefik config is done through labels, they can be added safely to docker-compose files
 without interfering with any other configuration. 
