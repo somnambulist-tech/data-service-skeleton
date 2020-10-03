@@ -16,11 +16,11 @@ services:
       context: .
       dockerfile: config/docker/postgres/Dockerfile
     environment:
-      POSTGRES_DB: app_db
+      POSTGRES_DB: users
       POSTGRES_USER: user
       POSTGRES_PASSWORD: secret
     volumes:
-      - app_db:/var/lib/postgresql/data
+      - users_db:/var/lib/postgresql/data
     ports:
       - "54321:5432"
     networks:
@@ -127,7 +127,7 @@ services:
 networks:
   backend:
     driver: bridge
-    name: app_network_backend
+    name: mycompany_network_backend
 
 #
 # These are docker volumes used to provide storage across container re-builds.
@@ -137,10 +137,10 @@ networks:
 # A suggested name is: the {COMPOSE_PROJECT_NAME}_volumes_<service_name>
 #
 volumes:
-  app_db:
-    name: app_volumes_app_db
+  users_db:
+    name: mycompany_volumes_users-db
   rabbitmq:
-    name: app_volumes_rabbitmq
+    name: mycompany_volumes_rabbitmq
   syslog_logs:
-    name: app_volumes_syslog-logs
+    name: mycompany_volumes_syslog-logs
 

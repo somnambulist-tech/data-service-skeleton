@@ -144,3 +144,14 @@ If you `dc down` services will automatically be removed.
 
 As the Traefik config is done through labels, they can be added safely to docker-compose files
 without interfering with any other configuration. 
+
+__Note:__ you should ensure that any services use the same named network that Traefik is running
+under to avoid issues with routing. By default the network name is: `mycompany_network_backend`.
+You should change this to reflect your projects name; then in services that need registering
+ensure that an external network is defined:
+
+```yaml
+networks:
+  mycompany_network_backend:
+    external: true
+```
