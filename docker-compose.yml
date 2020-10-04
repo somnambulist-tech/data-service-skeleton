@@ -11,20 +11,38 @@ services:
   #
   # A good convention is to prefix the service type e.g.: db-<db_name>
   #
-  db-app-users:
-    build:
-      context: .
-      dockerfile: config/docker/postgres/Dockerfile
-    environment:
-      POSTGRES_DB: users
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: secret
-    volumes:
-      - users_db:/var/lib/postgresql/data
-    ports:
-      - "54321:5432"
-    networks:
-      - backend
+  
+# Uncomment the following if using the accounts-service-skeleton
+#  db-accounts:
+#    build:
+#      context: .
+#      dockerfile: config/docker/postgres/Dockerfile
+#    environment:
+#      POSTGRES_DB: accounts
+#      POSTGRES_USER: mycompany
+#      POSTGRES_PASSWORD: secret
+#    volumes:
+#      - accounts_db:/var/lib/postgresql/data
+#    ports:
+#      - "54321:5432"
+#    networks:
+#      - backend
+#
+# Uncomment the following if using the events-service-skeleton
+#  db-events:
+#    build:
+#      context: .
+#      dockerfile: config/docker/postgres/Dockerfile
+#    environment:
+#      POSTGRES_DB: events
+#      POSTGRES_USER: mycompany
+#      POSTGRES_PASSWORD: secret
+#    volumes:
+#      - events_db:/var/lib/postgresql/data
+#    ports:
+#      - "54322:5432"
+#    networks:
+#      - backend
 
   #
   # Reverse proxy service
@@ -117,6 +135,10 @@ services:
     volumes:
       - syslog_logs:/var/log/syslog-ng
     restart: always
+    ports:
+      - "5501:514/udp"
+      - "5502:601/tcp"
+      - "5503:6514/tcp"
     networks:
       - backend
 
@@ -137,8 +159,10 @@ networks:
 # A suggested name is: the {COMPOSE_PROJECT_NAME}_volumes_<service_name>
 #
 volumes:
-  users_db:
-    name: mycompany_volumes_users-db
+  accounts_db:
+    name: mycompany_volumes_accounts-db
+  events_db:
+    name: mycompany_volumes_events-db
   rabbitmq:
     name: mycompany_volumes_rabbitmq
   syslog_logs:
