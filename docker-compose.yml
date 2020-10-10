@@ -96,6 +96,7 @@ services:
       dockerfile: config/docker/dns/Dockerfile
       args:
         DNS_HOST_IP: ${DNS_HOST_IP:-127.0.0.1}
+        PROJECT_DOMAIN: ${PROJECT_DOMAIN:-example.dev}
     restart: always
     ports:
       - "1034:53/udp"
