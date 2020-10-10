@@ -11,7 +11,7 @@ services:
   #
   # A good convention is to prefix the service type e.g.: db-<db_name>
   #
-  
+
 # Uncomment the following if using the accounts-service-skeleton
 #  db-accounts:
 #    build:
@@ -82,7 +82,7 @@ services:
       - backend
     labels:
       traefik.enable: true
-      traefik.http.routers.proxy.rule: "Host(`proxy.example.dev`)"
+      traefik.http.routers.proxy.rule: "Host(`proxy.${PROJECT_DOMAIN:-example.dev}`)"
       traefik.http.routers.proxy.tls: true
       traefik.http.services.proxy.loadbalancer.server.port: 8080
 
@@ -107,7 +107,7 @@ services:
       - backend
     labels:
       traefik.enable: true
-      traefik.http.routers.dns.rule: "Host(`dns.example.dev`)"
+      traefik.http.routers.dns.rule: "Host(`dns.${PROJECT_DOMAIN:-example.dev}`)"
       traefik.http.routers.dns.tls: true
       traefik.http.services.dns.loadbalancer.server.port: 8080
 
@@ -124,7 +124,7 @@ services:
       - backend
     labels:
       traefik.enable: true
-      traefik.http.routers.rabbitmq.rule: "Host(`rabbit.example.dev`)"
+      traefik.http.routers.rabbitmq.rule: "Host(`rabbit.${PROJECT_DOMAIN:-example.dev}`)"
       traefik.http.routers.rabbitmq.tls: true
       traefik.http.services.rabbitmq.loadbalancer.server.port: 15672
 

@@ -1,15 +1,9 @@
 # Created by .ignore support plugin (hsz.mobi)
 
-### Laravel template
-vendor/
-
 # Laravel 5 & Lumen specific
 .env.local
 .env.local.php
 .env.*.local
-bin/doctrine-*
-bin/var-dump-server
-var
 
 ### JetBrains template
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and Webstorm
@@ -85,10 +79,3 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
-
-# Docker
-.user.ini
-/.env-e
-/supervisord.log
-/supervisord.pid
-/composer.lock
