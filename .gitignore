@@ -81,3 +81,4 @@ Temporary Items
 .apdisk
 /config/docker/proxy/certs/server.key
 /config/docker/proxy/certs/server.pem
+docker-compose.override.yml
