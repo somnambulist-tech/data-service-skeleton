@@ -1,5 +1,5 @@
 
-FROM alpine:3.17
+FROM alpine:3.19
 
 RUN apk --update add ca-certificates \
     && apk update \
